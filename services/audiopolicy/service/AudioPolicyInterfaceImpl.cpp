@@ -702,7 +702,7 @@ Status AudioPolicyService::getInputForAttr(const media::audio::common::AudioAttr
     const auto isRecordingAllowed = audioserver_permissions() ?
             CHECK_PERM(RECORD_AUDIO, attributionSource.uid) :
             recordingAllowed(attributionSource, inputSource);
-    if (!(isRecordingAllowed
+    if (!isAudioServerOrMediaServerUid(attributionSource.uid) && !(isRecordingAllowed
             || inputSource == AUDIO_SOURCE_FM_TUNER
             || inputSource == AUDIO_SOURCE_REMOTE_SUBMIX
             || inputSource == AUDIO_SOURCE_ECHO_REFERENCE)) {
@@ -796,7 +796,7 @@ Status AudioPolicyService::getInputForAttr(const media::audio::common::AudioAttr
                 // FIXME: use the same permission as for remote submix for now.
                 FALLTHROUGH_INTENDED;
             case AudioPolicyInterface::API_INPUT_MIX_CAPTURE:
-                if (!canCaptureOutput) {
+                if (!isAudioServerOrMediaServerUid(attributionSource.uid) && !canCaptureOutput) {
                     ALOGE("%s permission denied: capture not allowed", __func__);
                     status = PERMISSION_DENIED;
                 }
@@ -906,7 +906,8 @@ Status AudioPolicyService::startInput(int32_t portIdAidl)
 
     std::stringstream msg;
     msg << "Audio recording on session " << client->session;
-    const auto permitted = startRecording(client->attributionSource, client->virtualDeviceId,
+    const auto permitted = isAudioServerOrMediaServerUid(client->attributionSource.uid) ||
+            startRecording(client->attributionSource, client->virtualDeviceId,
             String16(msg.str().c_str()), client->attributes.source);
 
     // check calling permissions
