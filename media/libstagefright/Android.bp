@@ -253,6 +253,7 @@ cc_library_shared {
 }
 cc_library {
     name: "libstagefright",
+    defaults: ["mtk_codecs_defaults"],
 
     srcs: [
         "AACWriter.cpp",
