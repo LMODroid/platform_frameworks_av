@@ -159,6 +159,9 @@ protected:
     // Modular DRM
     void notifyDrmInfo(const sp<ABuffer> &buffer);
 
+public:
+    virtual void setGetMp3Param(int32_t *  /*flag*/, bool  /*set*/){};
+
 private:
     sp<AMessage> mNotify;
 
