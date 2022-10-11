@@ -24,6 +24,8 @@
 //#define LOG_NDEBUG 0
 
 #include <android/content/res/CameraCompatibilityInfo.h>
+#include <android-base/properties.h>
+#include <android-base/strings.h>
 #include <camera/CameraUtils.h>
 #include <camera/StringUtils.h>
 #include <camera/camera2/CaptureRequest.h>
@@ -98,9 +100,17 @@ CameraDeviceClient::CameraDeviceClient(
       mStreamingRequestId(REQUEST_ID_NONE),
       mStreamingRequestLastFrameNumber(NO_IN_FLIGHT_REPEATING_FRAMES),
       mRequestIdCounter(0),
+      mPrivilegedClient(false),
       mOverrideForPerfClass(overrideForPerfClass),
       mOriginalCameraId(originalCameraId),
       mIsVendorClient(isVendorClient) {
+
+    std::vector<std::string> privilegedClientList = android::base::Split(
+            android::base::GetProperty("persist.vendor.camera.privapp.list", ""), ",");
+    auto it = std::find(privilegedClientList.begin(), privilegedClientList.end(),
+            getPackageName());
+    mPrivilegedClient = it != privilegedClientList.end();
+
     ATRACE_CALL();
     ALOGV("CameraDeviceClient %s: Opened", cameraId.c_str());
 }
@@ -210,6 +220,7 @@ status_t CameraDeviceClient::initializeImpl(TProviderPtr providerPtr,
             strerror(-res), res);
         return res;
     }
+    mDevice->setPrivilegedClient(mPrivilegedClient);
     return OK;
 }
 
@@ -1163,7 +1174,8 @@ binder::Status CameraDeviceClient::createStream(
                 isStreamInfoValid, outputConfiguration, outSurface,
                 flagtools::convertParcelableSurfaceTypeToSurface(surface), mCameraIdStr,
                 mDevice->infoPhysical(physicalCameraId), sensorPixelModesUsed, dynamicRangeProfile,
-                streamUseCase, timestampBase, mirrorMode, colorSpace, /*respectSurfaceSize*/false);
+                streamUseCase, timestampBase, mirrorMode, colorSpace, /*respectSurfaceSize*/false,
+                mPrivilegedClient);
 
         if (!res.isOk())
             return res;
@@ -1551,7 +1563,7 @@ binder::Status CameraDeviceClient::updateOutputConfiguration(int streamId,
                 flagtools::convertParcelableSurfaceTypeToSurface(newOutputsMap.valueAt(i)),
                 mCameraIdStr, mDevice->infoPhysical(physicalCameraId), sensorPixelModesUsed,
                 dynamicRangeProfile, streamUseCase, timestampBase, mirrorMode, colorSpace,
-                /*respectSurfaceSize*/ false);
+                /*respectSurfaceSize*/ false, mPrivilegedClient);
         if (!res.isOk()) return res;
 
         streamInfos.push_back(outInfo);
@@ -1954,7 +1966,7 @@ binder::Status CameraDeviceClient::finalizeOutputConfigurations(int32_t streamId
                 outSurface, flagtools::convertParcelableSurfaceTypeToSurface(surface),
                 mCameraIdStr, mDevice->infoPhysical(physicalId), sensorPixelModesUsed,
                 dynamicRangeProfile, streamUseCase, timestampBase, mirrorMode,
-                colorSpace, /*respectSurfaceSize*/ false);
+                colorSpace, /*respectSurfaceSize*/ false, mPrivilegedClient);
 
         if (!res.isOk()) return res;
 
