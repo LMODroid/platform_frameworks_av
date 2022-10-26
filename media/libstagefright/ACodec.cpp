@@ -4573,7 +4573,7 @@ status_t ACodec::setupAVCEncoderParameters(const sp<AMessage> &msg) {
         h264type.eLevel = static_cast<OMX_VIDEO_AVCLEVELTYPE>(level);
     } else {
         h264type.eProfile = OMX_VIDEO_AVCProfileBaseline;
-#if 0   /* DON'T YET DEFAULT TO HIGHEST PROFILE */
+#ifdef HAS_MTK_CODECS
         // Use largest supported profile for AVC recording if profile is not specified.
         for (OMX_VIDEO_AVCPROFILETYPE profile : {
                 OMX_VIDEO_AVCProfileHigh, OMX_VIDEO_AVCProfileMain }) {
