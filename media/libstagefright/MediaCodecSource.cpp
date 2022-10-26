@@ -51,6 +51,9 @@ const int kStopTimeoutUs = 300000; // allow 1 sec for shutting down encoder
 // input source.
 const int kMaxStopTimeOffsetUs = 1000000;
 
+static const uint32_t kQueuedBufferMax = 100;  // default queue about 1s datas before drop frames
+static const uint32_t kDropCountOnce = 30;
+
 struct MediaCodecSource::Puller : public AHandler {
     explicit Puller(const sp<MediaSource> &source);
 
@@ -127,6 +130,15 @@ MediaCodecSource::Puller::~Puller() {
 
 void MediaCodecSource::Puller::Queue::pushBuffer(MediaBufferBase *mbuf) {
     mReadBuffers.push_back(mbuf);
+    if (mReadBuffers.size() > kQueuedBufferMax + kDropCountOnce) {
+        ALOGW("Queued buffers(%zu) > %u, dropped frames!!", mReadBuffers.size(), kQueuedBufferMax + kDropCountOnce);
+        MediaBufferBase *mbuffer;
+        while (mReadBuffers.size() > kQueuedBufferMax) {
+            if (readBuffer(&mbuffer)) {
+                mbuffer->release();
+            }
+        }
+    }
 }
 
 bool MediaCodecSource::Puller::Queue::readBuffer(MediaBufferBase **mbuf) {
@@ -208,6 +220,7 @@ void MediaCodecSource::Puller::stopSource() {
 void MediaCodecSource::Puller::pause() {
     Mutexed<Queue>::Locked queue(mQueue);
     queue->mPaused = true;
+    queue->flush();
 }
 
 void MediaCodecSource::Puller::resume() {
