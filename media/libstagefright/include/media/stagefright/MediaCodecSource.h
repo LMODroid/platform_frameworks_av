@@ -162,6 +162,11 @@ private:
     int32_t mGeneration;
 
     DISALLOW_EVIL_CONSTRUCTORS(MediaCodecSource);
+
+#ifdef HAS_MTK_CODECS
+    int64_t mLastTimeUs;
+    bool mFrameDropped;
+#endif
 };
 
 } // namespace android
