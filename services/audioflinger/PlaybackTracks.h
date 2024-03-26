@@ -160,12 +160,12 @@ public:
                             *right = mFinalVolumeRight;
     }
 
-    void                setAppVolume(float volume);
-    float               getAppVolume() const { return mAppVolume; }
-    void                setAppMute(bool val);
-    bool                isAppMuted() { return mAppMuted; }
+    void setAppVolume(float volume) final;
+    float getAppVolume() const { return mAppVolume; };
+    void setAppMute(bool val) final;
+    bool isAppMuted() { return mAppMuted; };
 
-    String8             getPackageName() const { return mPackageName; }
+    String8 getPackageName() const { return mPackageName; }
 
     using SourceMetadatas = std::vector<playback_track_metadata_v7_t>;
     using MetadataInserter = std::back_insert_iterator<SourceMetadatas>;

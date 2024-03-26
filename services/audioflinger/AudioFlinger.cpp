@@ -1120,7 +1120,7 @@ status_t AudioFlinger::createTrack(const media::CreateTrackRequest& _input,
         if (lStatus == NO_ERROR) {
             // set volume
             String8 trackCreatorPackage = track->getPackageName();
-            if (!trackCreatorPackage.isEmpty() &&
+            if (!trackCreatorPackage.empty() &&
                 mAppVolumeConfigs.find(trackCreatorPackage) != mAppVolumeConfigs.end()) {
                 media::AppVolume config = mAppVolumeConfigs[trackCreatorPackage];
                 track->setAppMute(config.muted);
@@ -2016,9 +2016,9 @@ uint32_t AudioFlinger::getInputFramesLost(audio_io_handle_t ioHandle) const
 status_t AudioFlinger::listAppVolumes(std::vector<media::AppVolume> *vols)
 {
     std::set<media::AppVolume> volSet;
-    Mutex::Autolock _l(mLock);
+    audio_utils::lock_guard _l(mutex());
     for (size_t i = 0; i < mPlaybackThreads.size(); i++) {
-        sp<PlaybackThread> thread = mPlaybackThreads.valueAt(i);
+        sp<IAfPlaybackThread> thread = mPlaybackThreads.valueAt(i);
         thread->listAppVolumes(volSet);
     }
 
@@ -2029,9 +2029,9 @@ status_t AudioFlinger::listAppVolumes(std::vector<media::AppVolume> *vols)
 
 status_t AudioFlinger::setAppVolume(const String8& packageName, const float value)
 {
-    Mutex::Autolock _l(mLock);
+    audio_utils::lock_guard _l(mutex());
     for (size_t i = 0; i < mPlaybackThreads.size(); i++) {
-        sp<PlaybackThread> t = mPlaybackThreads.valueAt(i);
+        sp<IAfPlaybackThread> t = mPlaybackThreads.valueAt(i);
         t->setAppVolume(packageName, value);
     }
 
@@ -2049,9 +2049,9 @@ status_t AudioFlinger::setAppVolume(const String8& packageName, const float valu
 
 status_t AudioFlinger::setAppMute(const String8& packageName, const bool value)
 {
-    Mutex::Autolock _l(mLock);
+    audio_utils::lock_guard _l(mutex());
     for (size_t i = 0; i < mPlaybackThreads.size(); i++) {
-        sp<PlaybackThread> t = mPlaybackThreads.valueAt(i);
+        sp<IAfPlaybackThread> t = mPlaybackThreads.valueAt(i);
         t->setAppMute(packageName, value);
     }
 

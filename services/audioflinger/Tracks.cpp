@@ -1555,12 +1555,12 @@ void Track::setFinalVolume(float volumeLeft, float volumeRight)
     }
 }
 
-void AudioFlinger::PlaybackThread::Track::setAppVolume(float volume)
+void Track::setAppVolume(float volume)
 {
     mAppVolume = volume;
 }
 
-void AudioFlinger::PlaybackThread::Track::setAppMute(bool val)
+void Track::setAppMute(bool val)
 {
     mAppMuted = val;
 }
