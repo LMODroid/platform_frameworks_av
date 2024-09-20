@@ -4913,8 +4913,16 @@ void MPEG4Writer::Track::writeEdtsBox() {
                 ALOGV("editDuration:%" PRId64 "us", (trackStartOffsetUs + movieStartOffsetBFramesUs));
             } else {
                 // Track with B frame.
-                int32_t trackStartOffsetBFramesUs = getMinCttsOffsetTimeUs() - kMaxCttsOffsetTimeUs;
-                ALOGV("trackStartOffsetBFramesUs:%" PRId32, trackStartOffsetBFramesUs);
+                ALOGI("line %d: mMinCttsOffsetTicks:%" PRId64 ", mMaxCttsOffsetTicks:%" PRId64
+                      ", mMinCttsOffsetTimeUs:%" PRId64, __LINE__,
+                      mMinCttsOffsetTicks, mMaxCttsOffsetTicks, mMinCttsOffsetTimeUs);
+                int64_t minCttsOffsetTimeUs = getMinCttsOffsetTimeUs();
+                if (minCttsOffsetTimeUs < INT64_MIN + kMaxCttsOffsetTimeUs) {
+                    ALOGE("minCttsOffsetTimeUs is out of range:%" PRId64, minCttsOffsetTimeUs);
+                    minCttsOffsetTimeUs = kMaxCttsOffsetTimeUs;
+                }
+                int32_t trackStartOffsetBFramesUs = minCttsOffsetTimeUs - kMaxCttsOffsetTimeUs;
+                ALOGD("trackStartOffsetBFramesUs:%" PRId32, trackStartOffsetBFramesUs);
                 editDurationTicks =
                         ((trackStartOffsetUs + movieStartOffsetBFramesUs +
                           trackStartOffsetBFramesUs) * mvhdTimeScale + 5E5) / 1E6;
