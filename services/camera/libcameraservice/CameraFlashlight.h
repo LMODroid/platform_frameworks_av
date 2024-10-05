@@ -123,7 +123,8 @@ class CameraFlashlight : public virtual VirtualLightRefBase {
  */
 class ProviderFlashControl : public FlashControlBase {
     public:
-        ProviderFlashControl(sp<CameraProviderManager> providerManager);
+        ProviderFlashControl(sp<CameraProviderManager> providerManager,
+                CameraProviderManager::StatusListener* callbacks);
         virtual ~ProviderFlashControl();
 
         // FlashControlBase
@@ -134,7 +135,9 @@ class ProviderFlashControl : public FlashControlBase {
 
     private:
         sp<CameraProviderManager> mProviderManager;
+        CameraProviderManager::StatusListener* mCallbacks;
 
+        TorchModeStatus mStatus;
         Mutex mLock;
 };
 
