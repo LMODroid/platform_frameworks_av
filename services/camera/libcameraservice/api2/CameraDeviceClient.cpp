@@ -105,7 +105,7 @@ CameraDeviceClient::CameraDeviceClient(
     std::vector<std::string> privilegedClientList = android::base::Split(
             android::base::GetProperty("persist.vendor.camera.privapp.list", ""), ",");
     auto it = std::find(privilegedClientList.begin(), privilegedClientList.end(),
-            clientPackageName);
+            getPackageName());
     mPrivilegedClient = it != privilegedClientList.end();
 
     ATRACE_CALL();
