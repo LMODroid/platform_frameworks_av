@@ -2336,14 +2336,16 @@ void ThreadBase::boostThreadPriority(const int priority) {
 
 void PlaybackThread::listAppVolumes(std::set<media::AppVolume> &container)
 {
-   audio_utils::lock_guard _l(mutex());
-    for (sp<IAfTrack> track : mTracks) {
+    audio_utils::lock_guard _l(mutex());
+
+    for (const sp<IAfTrackBase>& track : mTracks) {
         if (!track->getPackageName().empty()) {
             media::AppVolume av;
             av.packageName = track->getPackageName();
             av.muted = track->isAppMuted();
             av.volume = track->getAppVolume();
             av.active = mActiveTracks.count(track) > 0;
+
             container.insert(av);
         }
     }
@@ -2352,22 +2354,26 @@ void PlaybackThread::listAppVolumes(std::set<media::AppVolume> &container)
 status_t PlaybackThread::setAppVolume(const String8& packageName, const float value)
 {
     audio_utils::lock_guard _l(mutex());
-    for (sp<IAfTrack> track : mTracks) {
+
+    for (const sp<IAfTrackBase>& track : mTracks) {
         if (packageName == track->getPackageName()) {
             track->setAppVolume(value);
         }
     }
+
     return NO_ERROR;
 }
 
 status_t PlaybackThread::setAppMute(const String8& packageName, const bool value)
 {
     audio_utils::lock_guard _l(mutex());
-    for (sp<IAfTrack> track : mTracks) {
+
+    for (const sp<IAfTrackBase>& track : mTracks) {
         if (packageName == track->getPackageName()) {
             track->setAppMute(value);
         }
     }
+
     return NO_ERROR;
 }
 

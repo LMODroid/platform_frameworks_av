@@ -973,10 +973,6 @@ Track::Track(
         }
     }
 
-    /* init app volume */
-    mAppMuted = false;
-    mAppVolume = 1.0f;
-
     if (mCblk == NULL) {
         return;
     }
@@ -1828,16 +1824,6 @@ void Track::setFinalVolume(float volumeLeft, float volumeRight)
         mLogForceVolumeUpdate = false;
         mTrackMetrics.logVolume(mFinalVolume);
     }
-}
-
-void Track::setAppVolume(float volume)
-{
-    mAppVolume = volume;
-}
-
-void Track::setAppMute(bool val)
-{
-    mAppMuted = val;
 }
 
 void Track::copyMetadataTo(MetadataInserter& backInserter) const
