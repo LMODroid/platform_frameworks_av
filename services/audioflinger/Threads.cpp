@@ -2334,6 +2334,43 @@ void ThreadBase::boostThreadPriority(const int priority) {
     }
 }
 
+void PlaybackThread::listAppVolumes(std::set<media::AppVolume> &container)
+{
+   audio_utils::lock_guard _l(mutex());
+    for (sp<IAfTrack> track : mTracks) {
+        if (!track->getPackageName().empty()) {
+            media::AppVolume av;
+            av.packageName = track->getPackageName();
+            av.muted = track->isAppMuted();
+            av.volume = track->getAppVolume();
+            av.active = mActiveTracks.indexOf(track) >= 0;
+            container.insert(av);
+        }
+    }
+}
+
+status_t PlaybackThread::setAppVolume(const String8& packageName, const float value)
+{
+    audio_utils::lock_guard _l(mutex());
+    for (sp<IAfTrack> track : mTracks) {
+        if (packageName == track->getPackageName()) {
+            track->setAppVolume(value);
+        }
+    }
+    return NO_ERROR;
+}
+
+status_t PlaybackThread::setAppMute(const String8& packageName, const bool value)
+{
+    audio_utils::lock_guard _l(mutex());
+    for (sp<IAfTrack> track : mTracks) {
+        if (packageName == track->getPackageName()) {
+            track->setAppMute(value);
+        }
+    }
+    return NO_ERROR;
+}
+
 // ----------------------------------------------------------------------------
 //      Playback
 // ----------------------------------------------------------------------------
@@ -5869,16 +5906,16 @@ PlaybackThread::mixer_state MixerThread::prepareTracks_l(
 
                 if (com_android_media_audio_ring_my_car()) {
                     if (!track->canBypassMute()
-                        && (track->isPlaybackRestricted() || track->getPortMute())) {
+                        && (track->isPlaybackRestricted() || track->getPortMute() || track->isAppMuted())) {
                         volume = 0.f;
                     } else {
-                        volume = masterVolume * track->getPortVolume();
+                        volume = masterVolume * track->getPortVolume() * track->getAppVolume();
                     }
                 } else {
-                    if (track->isPlaybackRestricted() || track->getPortMute()) {
+                    if (track->isPlaybackRestricted() || track->getPortMute() || track->isAppMuted()) {
                         volume = 0.f;
                     } else {
-                        volume = masterVolume * track->getPortVolume();
+                        volume = masterVolume * track->getPortVolume() * track->getAppVolume();
                     }
                 }
 
@@ -6082,16 +6119,16 @@ PlaybackThread::mixer_state MixerThread::prepareTracks_l(
 
             if (com_android_media_audio_ring_my_car()) {
                 if (!track->canBypassMute()
-                    && (track->isPlaybackRestricted() || track->getPortMute())) {
+                    && (track->isPlaybackRestricted() || track->getPortMute() || track->isAppMuted())) {
                     v = 0;
                 } else {
-                    v = masterVolume * track->getPortVolume();
+                    v = masterVolume * track->getPortVolume() * track->getAppVolume();
                 }
             } else {
-                if (track->isPlaybackRestricted() || track->getPortMute()) {
+                if (track->isPlaybackRestricted() || track->getPortMute() || track->isAppMuted()) {
                     v = 0;
                 } else {
-                    v = masterVolume * track->getPortVolume();
+                    v = masterVolume * track->getPortVolume() * track->getAppVolume();
                 }
             }
 
@@ -6877,12 +6914,13 @@ void DirectOutputThread::processVolume_l(const sp<IAfTrack>& track, bool lastTra
 
     if (mMasterMute || (com_android_media_audio_ring_my_car() ?
             (!track->canBypassMute()
-              && (track->isPlaybackRestricted() || track->getPortMute()))
-            : track->isPlaybackRestricted())) {
+              && (track->isPlaybackRestricted() || track->getPortMute() || track->isAppMuted()))
+            : (track->isPlaybackRestricted() || track->isAppMuted()))) {
         left = right = 0;
     } else {
         float typeVolume = track->getPortVolume();
-        const float v = mMasterVolume * typeVolume * shaperVolume;
+        float appVolume = track->getAppVolume();
+        const float v = mMasterVolume * typeVolume * shaperVolume * appVolume;
 
         if (left > GAIN_FLOAT_UNITY) {
             left = GAIN_FLOAT_UNITY;
